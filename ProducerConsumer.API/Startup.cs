@@ -8,6 +8,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Producer.API.Services;
+using ProducerConsumer.API.Models;
+using ProducerConsumer.API.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,8 +29,23 @@ namespace Producer.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddHostedService<KafkaProducerService>();
-            services.AddHostedService<KafkaProducerService>();
+            //services.AddSingleton<IProducerService, KafkaProducerService>();
+            services.Configure<KafkaConfiguration>(Configuration.GetSection(nameof(KafkaConfiguration)));
+
+            services.AddCronJob<KafkaProducerService>(c =>
+            {
+                c.TimeZoneInfo = TimeZoneInfo.Local;
+                c.CronExpression = @"*/1 * * * *";
+            });
+
+            services.AddCronJob<KafkaConsumerService>(c =>
+            {
+                c.TimeZoneInfo = TimeZoneInfo.Local;
+                c.CronExpression = @"*/2 * * * *";
+            });
+
+            //services.AddHostedService<KafkaProducerService>();
+            //services.AddHostedService<KafkaProducerService>();
 
             services.AddControllers();
             services.AddSwaggerGen(c =>

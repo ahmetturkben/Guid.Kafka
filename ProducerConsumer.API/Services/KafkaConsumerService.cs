@@ -1,5 +1,6 @@
 ﻿using Confluent.Kafka;
 using LZ4;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -14,20 +15,23 @@ using System.Threading.Tasks;
 
 namespace ProducerConsumer.API.Services
 {
-    public class KafkaConsumerService : IHostedService, IDisposable
+    public class KafkaConsumerService : ProducerConsumer.API.Services.BackgroundService, IConsumerService
     {
         private readonly ILogger<KafkaConsumerService> _logger;
         private readonly KafkaConfiguration _kafkaConfiguration;
         private IConsumer<string, string> _consumer;
+        private IServiceScopeFactory _serviceScopeFactory;
 
-        public KafkaConsumerService(ILogger<KafkaConsumerService> logger, IOptions<KafkaConfiguration> kafkaConfigurationOptions)
+        public KafkaConsumerService(ILogger<KafkaConsumerService> logger, IOptions<KafkaConfiguration> kafkaConfigurationOptions, IScheduleConfig<KafkaConsumerService> config,
+            IServiceScopeFactory serviceScopeFactory
+            ) : base(config.CronExpression, config.TimeZoneInfo)
         {
             _logger = logger ?? throw new ArgumentException(nameof(logger));
             _kafkaConfiguration = kafkaConfigurationOptions?.Value ?? throw new ArgumentException(nameof(kafkaConfigurationOptions));
 
             Init();
         }
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public override async Task StartAsync(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -46,7 +50,7 @@ namespace ProducerConsumer.API.Services
             }
         }
 
-        public async Task StopAsync(CancellationToken cancellationToken)
+        public override async Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Kafka Consumer Service is stopping.");
 
@@ -131,8 +135,9 @@ namespace ProducerConsumer.API.Services
                         await Task.Run(() =>
                         {
                             var json = Encoding.UTF8.GetString(LZ4Codec.Unwrap(Convert.FromBase64String(consumeResult.Message.Value)));
-                            if (json.Contains("Ahmet"))
-                                _logger.LogInformation($"[{consumeResult.Message.Key}] {consumeResult.Topic} - {json}");
+                            
+
+
                             _logger.LogInformation($"[{consumeResult.Message.Key}] {consumeResult.Topic} - {json}");
                         }, cancellationToken).ConfigureAwait(false);
                     }

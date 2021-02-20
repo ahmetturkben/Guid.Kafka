@@ -1,5 +1,6 @@
 ﻿using Confluent.Kafka;
 using LZ4;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,13 +13,15 @@ using System.Threading.Tasks;
 
 namespace Producer.API.Services
 {
-    public class KafkaProducerService : IHostedService, IDisposable, IProducerService
+    public class KafkaProducerService : ProducerConsumer.API.Services.BackgroundService, IProducerService
     {
         private IProducer<string, string> _producer;
         private readonly ILogger<KafkaProducerService> _logger;
         private readonly KafkaConfiguration _kafkaConfiguration;
 
-        public KafkaProducerService(ILogger<KafkaProducerService> logger, IOptions<KafkaConfiguration> kafkaConfigurationOptions)
+        public KafkaProducerService(ILogger<KafkaProducerService> logger, IOptions<KafkaConfiguration> kafkaConfigurationOptions, IScheduleConfig<KafkaConsumerService> config,
+            IServiceScopeFactory serviceScopeFactory
+            ) : base(config.CronExpression, config.TimeZoneInfo)
         {
             _logger = logger ?? throw new ArgumentException(nameof(logger));
             _kafkaConfiguration = kafkaConfigurationOptions?.Value ?? throw new ArgumentException(nameof(kafkaConfigurationOptions));
@@ -26,7 +29,7 @@ namespace Producer.API.Services
             Init();
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public override async Task StartAsync(CancellationToken cancellationToken)
         {
             if (!cancellationToken.IsCancellationRequested)
             {
@@ -42,7 +45,7 @@ namespace Producer.API.Services
             }
         }
 
-        public async Task StopAsync(CancellationToken cancellationToken)
+        public override async Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Kafka Producer Service is stopping.");
 
@@ -51,7 +54,7 @@ namespace Producer.API.Services
             await Task.CompletedTask;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             _producer.Dispose();
         }
@@ -91,9 +94,9 @@ namespace Producer.API.Services
                 {
                     if (!cancellationToken.IsCancellationRequested)
                     {
-                        for (int i = 0; i < 1001; i++)
+                        for (int i = 0; i < 5; i++)
                         {
-                            var json = data;
+                            var json = data + i.ToString();
 
                             var msg = new Message<string, string>
                             {
