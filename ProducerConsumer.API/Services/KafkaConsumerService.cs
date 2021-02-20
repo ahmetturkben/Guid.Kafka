@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using ProducerConsumer.API.Models;
+using RestService;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +21,7 @@ namespace ProducerConsumer.API.Services
         private readonly ILogger<KafkaConsumerService> _logger;
         private readonly KafkaConfiguration _kafkaConfiguration;
         private IConsumer<string, string> _consumer;
+        private IServiceScopeFactory _serviceScopeFactory;
 
         public KafkaConsumerService(ILogger<KafkaConsumerService> logger, IOptions<KafkaConfiguration> kafkaConfigurationOptions, IScheduleConfig<KafkaConsumerService> config,
             IServiceScopeFactory serviceScopeFactory
@@ -27,6 +29,7 @@ namespace ProducerConsumer.API.Services
         {
             _logger = logger ?? throw new ArgumentException(nameof(logger));
             _kafkaConfiguration = kafkaConfigurationOptions?.Value ?? throw new ArgumentException(nameof(kafkaConfigurationOptions));
+            _serviceScopeFactory = serviceScopeFactory;
 
             Init();
         }
@@ -41,7 +44,6 @@ namespace ProducerConsumer.API.Services
 
                     _consumer.Subscribe(new List<string>() { _kafkaConfiguration.Topic });
 
-                    //Consume(cancellationToken).ConfigureAwait(false);
                     while (!cancellationToken.IsCancellationRequested)
                     {
                         try
@@ -52,14 +54,22 @@ namespace ProducerConsumer.API.Services
 
                             if (consumeResult.Topic.Equals(_kafkaConfiguration.Topic))
                             {
+
                                 Task.Run(() =>
                                 {
-                                    var json = Encoding.UTF8.GetString(LZ4Codec.Unwrap(Convert.FromBase64String(consumeResult.Message.Value)));
+                                    using (var scope = _serviceScopeFactory.CreateScope())
+                                    {
+                                        var reportId = Encoding.UTF8.GetString(LZ4Codec.Unwrap(Convert.FromBase64String(consumeResult.Message.Value)));
+                                        if (!string.IsNullOrEmpty(reportId))
+                                        {
+                                            var service = scope.ServiceProvider.GetService<IReportService>();
+                                            var result = service.CompletedPutData("/ReportCompleted", reportId);
+                                        }
 
-
-
-                                    _logger.LogInformation($"[{consumeResult.Message.Key}] {consumeResult.Topic} - {json}");
+                                        _logger.LogInformation($"[{consumeResult.Message.Key}] {consumeResult.Topic} - {reportId}");
+                                    }
                                 }, cancellationToken).ConfigureAwait(false);
+
                             }
                         }
                         catch (Exception ex)
@@ -98,14 +108,19 @@ namespace ProducerConsumer.API.Services
 
                             if (consumeResult.Topic.Equals(_kafkaConfiguration.Topic))
                             {
-                                Task.Run(() =>
+                                using (var scope = _serviceScopeFactory.CreateScope())
+                                {
+                                    Task.Run(() =>
                                 {
                                     var json = Encoding.UTF8.GetString(LZ4Codec.Unwrap(Convert.FromBase64String(consumeResult.Message.Value)));
 
+                                    var service = scope.ServiceProvider.GetService<IReportService>();
+                                    var result = service.CompletedPutData("/ReportCompleted", json);
 
 
                                     _logger.LogInformation($"[{consumeResult.Message.Key}] {consumeResult.Topic} - {json}");
                                 }, cancellationToken).ConfigureAwait(false);
+                                }
                             }
                         }
                         catch (Exception ex)
@@ -192,34 +207,5 @@ namespace ProducerConsumer.API.Services
                 _logger.LogError(error);
             });
         }
-
-        //private async Task Consume(CancellationToken cancellationToken)
-        //{
-        //    while (!cancellationToken.IsCancellationRequested)
-        //    {
-        //        try
-        //        {
-        //            var consumeResult = _consumer.Consume(cancellationToken);
-
-        //            if (consumeResult?.Message == null) continue;
-
-        //            if (consumeResult.Topic.Equals(_kafkaConfiguration.Topic))
-        //            {
-        //                await Task.Run(() =>
-        //                {
-        //                    var json = Encoding.UTF8.GetString(LZ4Codec.Unwrap(Convert.FromBase64String(consumeResult.Message.Value)));
-                            
-
-
-        //                    _logger.LogInformation($"[{consumeResult.Message.Key}] {consumeResult.Topic} - {json}");
-        //                }, cancellationToken).ConfigureAwait(false);
-        //            }
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            _logger.LogError(ex, ex.Message);
-        //        }
-        //    }
-        //}
     }
 }

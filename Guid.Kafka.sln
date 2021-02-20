@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Console", "Console", "{A62B
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "API", "API", "{8AE07014-0648-44AD-A2EA-A747308162AC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestService", "RestService\RestService.csproj", "{DF58EB26-331B-4D50-B8FA-D0DC9D3E4A38}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +33,10 @@ Global
 		{F3621480-0457-43F1-808F-785F045A688F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F3621480-0457-43F1-808F-785F045A688F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F3621480-0457-43F1-808F-785F045A688F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF58EB26-331B-4D50-B8FA-D0DC9D3E4A38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF58EB26-331B-4D50-B8FA-D0DC9D3E4A38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF58EB26-331B-4D50-B8FA-D0DC9D3E4A38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF58EB26-331B-4D50-B8FA-D0DC9D3E4A38}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

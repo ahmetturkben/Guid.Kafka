@@ -4,9 +4,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using ProducerConsumer.API.Models;
 using ProducerConsumer.API.Services;
+using RestService;
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +21,7 @@ namespace Producer.API.Services
         private IProducer<string, string> _producer;
         private readonly ILogger<KafkaProducerService> _logger;
         private readonly KafkaConfiguration _kafkaConfiguration;
+        private IServiceScopeFactory _serviceScopeFactory;
 
         public KafkaProducerService(ILogger<KafkaProducerService> logger, IOptions<KafkaConfiguration> kafkaConfigurationOptions, IScheduleConfig<KafkaConsumerService> config,
             IServiceScopeFactory serviceScopeFactory
@@ -25,6 +29,7 @@ namespace Producer.API.Services
         {
             _logger = logger ?? throw new ArgumentException(nameof(logger));
             _kafkaConfiguration = kafkaConfigurationOptions?.Value ?? throw new ArgumentException(nameof(kafkaConfigurationOptions));
+            _serviceScopeFactory = serviceScopeFactory;
 
             Init();
         }
@@ -43,16 +48,22 @@ namespace Producer.API.Services
                         {
                             if (!cancellationToken.IsCancellationRequested)
                             {
-                                for (int i = 0; i < 5; i++)
+                                using (var scope = _serviceScopeFactory.CreateScope())
                                 {
-                                    var json = "helloword" + i.ToString();
-
-                                    var msg = new Message<string, string>
+                                    var service = scope.ServiceProvider.GetService<IReportService>();
+                                    string data = service.GetData("/ReportProccessing");
+                                    var reports = JsonConvert.DeserializeObject<List<string>>(data);
+                                    for (int i = 0; i < reports.Count; i++)
                                     {
-                                        Key = _kafkaConfiguration.Key,
-                                        Value = Convert.ToBase64String(LZ4Codec.Wrap(Encoding.UTF8.GetBytes(json)))
-                                    };
-                                    _producer.ProduceAsync(_kafkaConfiguration.Topic, msg).ConfigureAwait(false);
+                                        var reportId = reports[i];
+
+                                        var msg = new Message<string, string>
+                                        {
+                                            Key = _kafkaConfiguration.Key,
+                                            Value = Convert.ToBase64String(LZ4Codec.Wrap(Encoding.UTF8.GetBytes(reportId)))
+                                        };
+                                        _producer.ProduceAsync(_kafkaConfiguration.Topic, msg).ConfigureAwait(false);
+                                    }
                                 }
                             }
                         }
@@ -67,7 +78,7 @@ namespace Producer.API.Services
                     _logger.LogError(ex, ex.Message);
                 }
             }
-            return  base.StartAsync(cancellationToken);
+            return base.StartAsync(cancellationToken);
         }
 
         public override Task DoWork(CancellationToken cancellationToken)
@@ -84,16 +95,22 @@ namespace Producer.API.Services
                         {
                             if (!cancellationToken.IsCancellationRequested)
                             {
-                                for (int i = 0; i < 5; i++)
+                                using (var scope = _serviceScopeFactory.CreateScope())
                                 {
-                                    var json = "helloword" + i.ToString();
-
-                                    var msg = new Message<string, string>
+                                    var service = scope.ServiceProvider.GetService<IReportService>();
+                                    string data = service.GetData("/ReportProccessing");
+                                    var reports = JsonConvert.DeserializeObject<List<string>>(data);
+                                    for (int i = 0; i < reports.Count; i++)
                                     {
-                                        Key = _kafkaConfiguration.Key,
-                                        Value = Convert.ToBase64String(LZ4Codec.Wrap(Encoding.UTF8.GetBytes(json)))
-                                    };
-                                    _producer.ProduceAsync(_kafkaConfiguration.Topic, msg).ConfigureAwait(false);
+                                        var reportId = reports[i];
+
+                                        var msg = new Message<string, string>
+                                        {
+                                            Key = _kafkaConfiguration.Key,
+                                            Value = Convert.ToBase64String(LZ4Codec.Wrap(Encoding.UTF8.GetBytes(reportId)))
+                                        };
+                                        _producer.ProduceAsync(_kafkaConfiguration.Topic, msg).ConfigureAwait(false);
+                                    }
                                 }
                             }
                         }
@@ -150,33 +167,5 @@ namespace Producer.API.Services
 
             _producer = new ProducerBuilder<string, string>(config).Build();
         }
-
-        //private async Task Produce(CancellationToken cancellationToken, string data)
-        //{
-        //    try
-        //    {
-        //        using (_logger.BeginScope("Kafka App Produce Sample Data"))
-        //        {
-        //            if (!cancellationToken.IsCancellationRequested)
-        //            {
-        //                for (int i = 0; i < 5; i++)
-        //                {
-        //                    var json = data + i.ToString();
-
-        //                    var msg = new Message<string, string>
-        //                    {
-        //                        Key = _kafkaConfiguration.Key,
-        //                        Value = Convert.ToBase64String(LZ4Codec.Wrap(Encoding.UTF8.GetBytes(json)))
-        //                    };
-        //                    await _producer.ProduceAsync(_kafkaConfiguration.Topic, msg).ConfigureAwait(false);
-        //                }
-        //            }
-        //        }
-        //    }
-        //    catch (Exception exception)
-        //    {
-        //        _logger.LogError(exception, exception.Message);
-        //    }
-        //}
     }
 }

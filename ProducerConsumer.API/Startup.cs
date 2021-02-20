@@ -10,6 +10,7 @@ using Microsoft.OpenApi.Models;
 using Producer.API.Services;
 using ProducerConsumer.API.Models;
 using ProducerConsumer.API.Services;
+using RestService;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,8 +30,10 @@ namespace Producer.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHttpClient();
             //services.AddSingleton<IProducerService, KafkaProducerService>();
             services.Configure<KafkaConfiguration>(Configuration.GetSection(nameof(KafkaConfiguration)));
+            services.AddScoped<IReportService, ReportService>();
 
             services.AddCronJob<KafkaProducerService>(c =>
             {
@@ -43,9 +46,6 @@ namespace Producer.API
                 c.TimeZoneInfo = TimeZoneInfo.Local;
                 c.CronExpression = @"*/2 * * * *";
             });
-
-            //services.AddHostedService<KafkaProducerService>();
-            //services.AddHostedService<KafkaProducerService>();
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
