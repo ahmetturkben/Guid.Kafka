@@ -20,7 +20,6 @@ namespace ProducerConsumer.API.Services
         private readonly ILogger<KafkaConsumerService> _logger;
         private readonly KafkaConfiguration _kafkaConfiguration;
         private IConsumer<string, string> _consumer;
-        private IServiceScopeFactory _serviceScopeFactory;
 
         public KafkaConsumerService(ILogger<KafkaConsumerService> logger, IOptions<KafkaConfiguration> kafkaConfigurationOptions, IScheduleConfig<KafkaConsumerService> config,
             IServiceScopeFactory serviceScopeFactory
@@ -31,7 +30,8 @@ namespace ProducerConsumer.API.Services
 
             Init();
         }
-        public override async Task StartAsync(CancellationToken cancellationToken)
+
+        public override Task StartAsync(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -41,25 +41,98 @@ namespace ProducerConsumer.API.Services
 
                     _consumer.Subscribe(new List<string>() { _kafkaConfiguration.Topic });
 
-                    await Consume(cancellationToken).ConfigureAwait(false);
+                    //Consume(cancellationToken).ConfigureAwait(false);
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            var consumeResult = _consumer.Consume(cancellationToken);
+
+                            if (consumeResult?.Message == null) continue;
+
+                            if (consumeResult.Topic.Equals(_kafkaConfiguration.Topic))
+                            {
+                                Task.Run(() =>
+                                {
+                                    var json = Encoding.UTF8.GetString(LZ4Codec.Unwrap(Convert.FromBase64String(consumeResult.Message.Value)));
+
+
+
+                                    _logger.LogInformation($"[{consumeResult.Message.Key}] {consumeResult.Topic} - {json}");
+                                }, cancellationToken).ConfigureAwait(false);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, ex.Message);
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, ex.Message);
                 }
             }
+
+            return base.StartAsync(cancellationToken);
         }
 
-        public override async Task StopAsync(CancellationToken cancellationToken)
+        public override Task DoWork(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    _logger.LogInformation("Kafka Consumer Service has started.");
+
+                    _consumer.Subscribe(new List<string>() { _kafkaConfiguration.Topic });
+
+                    //Consume(cancellationToken).ConfigureAwait(false);
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            var consumeResult = _consumer.Consume(cancellationToken);
+
+                            if (consumeResult?.Message == null) continue;
+
+                            if (consumeResult.Topic.Equals(_kafkaConfiguration.Topic))
+                            {
+                                Task.Run(() =>
+                                {
+                                    var json = Encoding.UTF8.GetString(LZ4Codec.Unwrap(Convert.FromBase64String(consumeResult.Message.Value)));
+
+
+
+                                    _logger.LogInformation($"[{consumeResult.Message.Key}] {consumeResult.Topic} - {json}");
+                                }, cancellationToken).ConfigureAwait(false);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, ex.Message);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, ex.Message);
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public override Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Kafka Consumer Service is stopping.");
 
             _consumer.Close();
 
-            await Task.CompletedTask;
+            return base.StopAsync(cancellationToken);
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             _consumer.Dispose();
         }
@@ -120,33 +193,33 @@ namespace ProducerConsumer.API.Services
             });
         }
 
-        private async Task Consume(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                try
-                {
-                    var consumeResult = _consumer.Consume(cancellationToken);
+        //private async Task Consume(CancellationToken cancellationToken)
+        //{
+        //    while (!cancellationToken.IsCancellationRequested)
+        //    {
+        //        try
+        //        {
+        //            var consumeResult = _consumer.Consume(cancellationToken);
 
-                    if (consumeResult?.Message == null) continue;
+        //            if (consumeResult?.Message == null) continue;
 
-                    if (consumeResult.Topic.Equals(_kafkaConfiguration.Topic))
-                    {
-                        await Task.Run(() =>
-                        {
-                            var json = Encoding.UTF8.GetString(LZ4Codec.Unwrap(Convert.FromBase64String(consumeResult.Message.Value)));
+        //            if (consumeResult.Topic.Equals(_kafkaConfiguration.Topic))
+        //            {
+        //                await Task.Run(() =>
+        //                {
+        //                    var json = Encoding.UTF8.GetString(LZ4Codec.Unwrap(Convert.FromBase64String(consumeResult.Message.Value)));
                             
 
 
-                            _logger.LogInformation($"[{consumeResult.Message.Key}] {consumeResult.Topic} - {json}");
-                        }, cancellationToken).ConfigureAwait(false);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, ex.Message);
-                }
-            }
-        }
+        //                    _logger.LogInformation($"[{consumeResult.Message.Key}] {consumeResult.Topic} - {json}");
+        //                }, cancellationToken).ConfigureAwait(false);
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            _logger.LogError(ex, ex.Message);
+        //        }
+        //    }
+        //}
     }
 }

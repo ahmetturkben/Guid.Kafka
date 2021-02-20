@@ -29,29 +29,94 @@ namespace Producer.API.Services
             Init();
         }
 
-        public override async Task StartAsync(CancellationToken cancellationToken)
+        public override Task StartAsync(CancellationToken cancellationToken)
         {
             if (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
                     _logger.LogInformation("Kafka Producer Service has started.");
-                    await Produce(cancellationToken, "").ConfigureAwait(false);
+                    //Produce(cancellationToken, "").ConfigureAwait(false);
+                    try
+                    {
+                        using (_logger.BeginScope("Kafka App Produce Sample Data"))
+                        {
+                            if (!cancellationToken.IsCancellationRequested)
+                            {
+                                for (int i = 0; i < 5; i++)
+                                {
+                                    var json = "helloword" + i.ToString();
+
+                                    var msg = new Message<string, string>
+                                    {
+                                        Key = _kafkaConfiguration.Key,
+                                        Value = Convert.ToBase64String(LZ4Codec.Wrap(Encoding.UTF8.GetBytes(json)))
+                                    };
+                                    _producer.ProduceAsync(_kafkaConfiguration.Topic, msg).ConfigureAwait(false);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        _logger.LogError(exception, exception.Message);
+                    }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, ex.Message);
                 }
             }
+            return  base.StartAsync(cancellationToken);
         }
 
-        public override async Task StopAsync(CancellationToken cancellationToken)
+        public override Task DoWork(CancellationToken cancellationToken)
+        {
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    _logger.LogInformation("Kafka Producer Service has started.");
+                    //Produce(cancellationToken, "").ConfigureAwait(false);
+                    try
+                    {
+                        using (_logger.BeginScope("Kafka App Produce Sample Data"))
+                        {
+                            if (!cancellationToken.IsCancellationRequested)
+                            {
+                                for (int i = 0; i < 5; i++)
+                                {
+                                    var json = "helloword" + i.ToString();
+
+                                    var msg = new Message<string, string>
+                                    {
+                                        Key = _kafkaConfiguration.Key,
+                                        Value = Convert.ToBase64String(LZ4Codec.Wrap(Encoding.UTF8.GetBytes(json)))
+                                    };
+                                    _producer.ProduceAsync(_kafkaConfiguration.Topic, msg).ConfigureAwait(false);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        _logger.LogError(exception, exception.Message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, ex.Message);
+                }
+            }
+            return Task.CompletedTask;
+        }
+
+        public override Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Kafka Producer Service is stopping.");
 
             _producer.Flush(cancellationToken);
-
-            await Task.CompletedTask;
+            return base.StopAsync(cancellationToken);
         }
 
         public override void Dispose()
@@ -86,32 +151,32 @@ namespace Producer.API.Services
             _producer = new ProducerBuilder<string, string>(config).Build();
         }
 
-        private async Task Produce(CancellationToken cancellationToken, string data)
-        {
-            try
-            {
-                using (_logger.BeginScope("Kafka App Produce Sample Data"))
-                {
-                    if (!cancellationToken.IsCancellationRequested)
-                    {
-                        for (int i = 0; i < 5; i++)
-                        {
-                            var json = data + i.ToString();
+        //private async Task Produce(CancellationToken cancellationToken, string data)
+        //{
+        //    try
+        //    {
+        //        using (_logger.BeginScope("Kafka App Produce Sample Data"))
+        //        {
+        //            if (!cancellationToken.IsCancellationRequested)
+        //            {
+        //                for (int i = 0; i < 5; i++)
+        //                {
+        //                    var json = data + i.ToString();
 
-                            var msg = new Message<string, string>
-                            {
-                                Key = _kafkaConfiguration.Key,
-                                Value = Convert.ToBase64String(LZ4Codec.Wrap(Encoding.UTF8.GetBytes(json)))
-                            };
-                            await _producer.ProduceAsync(_kafkaConfiguration.Topic, msg).ConfigureAwait(false);
-                        }
-                    }
-                }
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, exception.Message);
-            }
-        }
+        //                    var msg = new Message<string, string>
+        //                    {
+        //                        Key = _kafkaConfiguration.Key,
+        //                        Value = Convert.ToBase64String(LZ4Codec.Wrap(Encoding.UTF8.GetBytes(json)))
+        //                    };
+        //                    await _producer.ProduceAsync(_kafkaConfiguration.Topic, msg).ConfigureAwait(false);
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception exception)
+        //    {
+        //        _logger.LogError(exception, exception.Message);
+        //    }
+        //}
     }
 }
