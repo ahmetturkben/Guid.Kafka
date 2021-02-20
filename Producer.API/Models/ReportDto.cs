@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace Producer.API.Models
+namespace ProducerConsumer.API.Models
 {
     public class ReportDto
     {
-        public int MyProperty { get; set; }
+        public string Id { get; set; }
+        public DateTime RequestDate { get; set; }
+        public string ReportStatus { get; set; }
     }
 }

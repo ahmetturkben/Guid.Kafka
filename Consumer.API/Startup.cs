@@ -7,13 +7,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using Producer.API.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Producer.API
+namespace Consumer.API
 {
     public class Startup
     {
@@ -27,13 +26,11 @@ namespace Producer.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddHostedService<KafkaProducerService>();
-            services.AddHostedService<KafkaProducerService>();
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Producer.API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Consumer.API", Version = "v1" });
             });
         }
 
@@ -44,7 +41,7 @@ namespace Producer.API
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Producer.API v1"));
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Consumer.API v1"));
             }
 
             app.UseHttpsRedirection();
