@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsumerApp", "ConsumerApp\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProducerApp", "ProducerApp\ProducerApp.csproj", "{F3621480-0457-43F1-808F-785F045A688F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Console", "Console", "{A62BDC32-7C9A-4D45-B229-A17F38558EEC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "API", "API", "{8AE07014-0648-44AD-A2EA-A747308162AC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,6 +34,11 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1A63C19E-C8DE-4E7F-A774-A486D75B11FE} = {8AE07014-0648-44AD-A2EA-A747308162AC}
+		{EEA770D2-B657-4B89-8B01-21A7BE2F588C} = {A62BDC32-7C9A-4D45-B229-A17F38558EEC}
+		{F3621480-0457-43F1-808F-785F045A688F} = {A62BDC32-7C9A-4D45-B229-A17F38558EEC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {148447DD-3A52-465D-B8FF-0F73CD7D294A}
