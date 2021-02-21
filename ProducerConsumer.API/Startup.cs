@@ -41,11 +41,13 @@ namespace Producer.API
                 c.CronExpression = @"*/1 * * * *";
             });
 
-            services.AddCronJob<KafkaConsumerService>(c =>
-            {
-                c.TimeZoneInfo = TimeZoneInfo.Local;
-                c.CronExpression = @"*/2 * * * *";
-            });
+            //KafkaConsumerService  service için schedule çal??mas?na gerek olmad???, zaten kafka sürekli dinleme modunda oldu?u için, addhostedService olarak inject etmek yeterlidir.
+            services.AddHostedService<KafkaConsumerService>();
+            //services.AddCronJob<KafkaConsumerService>(c =>
+            //{
+            //    c.TimeZoneInfo = TimeZoneInfo.Local;
+            //    c.CronExpression = @"*/2 * * * *";
+            //});
 
             services.AddControllers();
             services.AddSwaggerGen(c =>

@@ -23,7 +23,8 @@ namespace Producer.API.Services
         private readonly KafkaConfiguration _kafkaConfiguration;
         private IServiceScopeFactory _serviceScopeFactory;
 
-        public KafkaProducerService(ILogger<KafkaProducerService> logger, IOptions<KafkaConfiguration> kafkaConfigurationOptions, IScheduleConfig<KafkaConsumerService> config,
+        public KafkaProducerService(ILogger<KafkaProducerService> logger, IOptions<KafkaConfiguration> kafkaConfigurationOptions
+            ,IScheduleConfig<KafkaProducerService> config,
             IServiceScopeFactory serviceScopeFactory
             ) : base(config.CronExpression, config.TimeZoneInfo)
         {

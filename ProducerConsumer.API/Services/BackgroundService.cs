@@ -17,8 +17,11 @@ namespace ProducerConsumer.API.Services
 
         protected BackgroundService(string cronExpression, TimeZoneInfo timeZoneInfo)
         {
-            _expression = CronExpression.Parse(cronExpression);
-            _timeZoneInfo = timeZoneInfo;
+            if(cronExpression != null && timeZoneInfo != null)
+            {
+                _expression = CronExpression.Parse(cronExpression);
+                _timeZoneInfo = timeZoneInfo;
+            }
         }
 
         public virtual async Task StartAsync(CancellationToken cancellationToken)

@@ -23,9 +23,10 @@ namespace ProducerConsumer.API.Services
         private IConsumer<string, string> _consumer;
         private IServiceScopeFactory _serviceScopeFactory;
 
-        public KafkaConsumerService(ILogger<KafkaConsumerService> logger, IOptions<KafkaConfiguration> kafkaConfigurationOptions, IScheduleConfig<KafkaConsumerService> config,
-            IServiceScopeFactory serviceScopeFactory
-            ) : base(config.CronExpression, config.TimeZoneInfo)
+        public KafkaConsumerService(ILogger<KafkaConsumerService> logger, IOptions<KafkaConfiguration> kafkaConfigurationOptions
+            //, IScheduleConfig<KafkaConsumerService> config
+            ,IServiceScopeFactory serviceScopeFactory
+            ) : base(null, null)
         {
             _logger = logger ?? throw new ArgumentException(nameof(logger));
             _kafkaConfiguration = kafkaConfigurationOptions?.Value ?? throw new ArgumentException(nameof(kafkaConfigurationOptions));
